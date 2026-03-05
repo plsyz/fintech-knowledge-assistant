@@ -50,5 +50,7 @@ backups/
 docs/regulations/*.pdf
 *.log
 
-### AI Tools ###
+### Local Config ###
 .claude/
+.cursor/
+.copilot/
