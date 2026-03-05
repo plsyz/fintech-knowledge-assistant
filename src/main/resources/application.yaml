@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: fintech-knowledge-assistant
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: llama3.2:3b
+          temperature: 0.3
+      embedding:
+        options:
+          model: nomic-embed-text
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 768
+        initialize-schema: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/fka_vectorstore
+    username: fka_user
+    password: fka_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB

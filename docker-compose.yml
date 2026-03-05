@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: fka-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: fka-postgres
+    environment:
+      POSTGRES_DB: fka_vectorstore
+      POSTGRES_USER: fka_user
+      POSTGRES_PASSWORD: fka_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  ollama_data:
+  postgres_data:

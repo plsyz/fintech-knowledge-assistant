@@ -1,0 +1,54 @@
+### Build ###
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Maven ###
+.mvn/wrapper/maven-wrapper.jar
+
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+### IDE - IntelliJ ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### IDE - Eclipse/STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+### IDE - NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### IDE - VS Code ###
+.vscode/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Application ###
+backups/
+docs/regulations/*.pdf
+*.log
+
+### AI Tools ###
+.claude/
