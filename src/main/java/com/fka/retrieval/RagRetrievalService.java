@@ -23,8 +23,8 @@ public class RagRetrievalService {
                 .defaultSystem(systemPromptResource)
                 .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore)
                         .searchRequest(SearchRequest.builder()
-                                .topK(5)              // Return 5 most similar chunks
-                                .similarityThreshold(0.7) // Only chunks with >= 0.7 cosine similarity
+                                .topK(10)             // Return 10 most similar chunks
+                                .similarityThreshold(0.2) // Only chunks with >= 0.2 cosine similarity
                                 .build())
                         .build())
                 .build();

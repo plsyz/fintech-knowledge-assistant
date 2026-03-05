@@ -51,6 +51,7 @@ docs/regulations/*.pdf
 *.log
 
 ### Local Config ###
+.env
 .claude/
 .cursor/
 .copilot/

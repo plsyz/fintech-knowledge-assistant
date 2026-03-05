@@ -2,7 +2,7 @@
 
 A production-aware RAG (Retrieval-Augmented Generation) system that answers EU payment and financial regulation questions using actual regulatory documents.
 
-Built with **Spring Boot + Spring AI + Ollama + PGVector**.
+Built with **Spring Boot + Spring AI + PGVector**. Supports both **local Ollama models** and **Anthropic Claude API** for chat.
 
 ## What It Does
 
@@ -35,12 +35,12 @@ Upload EU regulation PDFs, and the system will:
 +----------|------------------------|--------------+
            |                        |
            v                        v
-  +------------------+    +------------------+
-  |  PostgreSQL +    |    |  Ollama (Local)  |
-  |  PGVector        |    |  - llama3.2:3b   |
-  |  (Vector Store)  |    |  - nomic-embed   |
-  |  Port 5433       |    |  Port 11434      |
-  +------------------+    +------------------+
+  +------------------+    +------------------+    +------------------+
+  |  PostgreSQL +    |    |  Ollama (Local)  |    |  Anthropic API   |
+  |  PGVector        |    |  - nomic-embed   |    |  - Claude Haiku  |
+  |  (Vector Store)  |    |  Port 11434      |    |  (Cloud Chat)    |
+  |  Port 5433       |    +------------------+    +------------------+
+  +------------------+
 ```
 
 ## Tech Stack
@@ -49,7 +49,7 @@ Upload EU regulation PDFs, and the system will:
 |-----------|-----------|---------|
 | Framework | Spring Boot 3.5.x | REST API, DI, configuration |
 | AI Framework | Spring AI 1.1.2 | Embedding, vector store, chat client, RAG advisor |
-| Chat Model | llama3.2:3b (via Ollama) | Answer generation from context |
+| Chat Model | Claude Haiku (Anthropic API) or llama3.2:3b (Ollama) | Answer generation from context |
 | Embedding Model | nomic-embed-text (via Ollama) | Text to 768-dim vector conversion |
 | Vector Store | PostgreSQL + PGVector | Vector similarity search + metadata filtering |
 | Index Type | HNSW | Fast approximate nearest neighbor search |
@@ -108,9 +108,60 @@ docker exec fka-ollama ollama pull llama3.2:3b
 docker exec fka-ollama ollama pull nomic-embed-text
 ```
 
-### 2. Run the Application
+### 2. Configure the Chat Model
+
+The application supports two chat model backends. Ollama embeddings are always used for vector search regardless of which chat model you choose.
+
+#### Option A: Anthropic Claude API (Recommended — faster)
+
+Create a `.env` file in the project root (this file is gitignored):
 
 ```bash
+ANTHROPIC_API_KEY=your-api-key-here
+```
+
+Then run:
+
+```bash
+source .env && ./mvnw spring-boot:run
+```
+
+#### Option B: Local Ollama (free, no API key needed)
+
+To switch back to the local Ollama model, make these changes:
+
+1. In `FintechKnowledgeAssistantApplication.java`, remove the `OllamaChatAutoConfiguration` exclusion:
+   ```java
+   @SpringBootApplication  // remove the (exclude = {...}) part
+   ```
+
+2. In `application.yaml`, replace the Anthropic + Ollama config with:
+   ```yaml
+   spring.ai:
+     ollama:
+       base-url: http://localhost:11434
+       chat:
+         options:
+           model: llama3.2:3b
+           temperature: 0.3
+       embedding:
+         options:
+           model: nomic-embed-text
+   ```
+
+3. Remove or comment out the `spring.ai.anthropic` section.
+
+> **Note:** The local Ollama model runs on CPU and is significantly slower (~1-3 min per query on most machines). The Anthropic API returns answers in 2-5 seconds.
+>
+> For detailed step-by-step switching instructions, see [SWITCHING-CHAT-MODELS.md](SWITCHING-CHAT-MODELS.md).
+
+### 3. Run the Application
+
+```bash
+# With Anthropic (load .env first)
+source .env && ./mvnw spring-boot:run
+
+# With Ollama (no .env needed)
 ./mvnw spring-boot:run
 ```
 
@@ -167,13 +218,13 @@ fintech-knowledge-assistant/
 
 | Decision | Choice | Why |
 |----------|--------|-----|
-| LLM | llama3.2:3b (local) | Free, fits 16GB RAM, no API costs |
-| Embedding | nomic-embed-text | 768-dim, high quality, runs locally |
+| Chat LLM | Claude Haiku (API) / llama3.2:3b (local) | API is fast (~3s); local is free but slow on CPU |
+| Embedding | nomic-embed-text (local Ollama) | 768-dim, high quality, always runs locally |
 | Vector Store | PGVector | Familiar SQL, metadata filtering, Spring AI integration |
 | Chunk Size | 300 tokens | Balance precision vs context for dense regulatory text |
-| Top-K | 5 | Enough context without overwhelming 3B model |
+| Top-K | 10 | Enough context for comprehensive regulatory answers |
 | Temperature | 0.3 | Factual and deterministic for regulatory Q&A |
-| Similarity Threshold | 0.7 | Filters irrelevant chunks |
+| Similarity Threshold | 0.2 | Permissive — lets the LLM judge relevance from more candidates |
 
 
 ## License
