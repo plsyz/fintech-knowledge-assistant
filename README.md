@@ -71,6 +71,25 @@ Upload EU regulation PDFs, and the system will:
 | IFR (2015/751) | 76 | Interchange Fee Regulation |
 | **Total** | **2,404** | **11 EU regulations** |
 
+### Download Links (EUR-Lex)
+
+All regulations are freely available from the official EU law portal. Download the PDFs and place them in `docs/regulations/`:
+
+| Regulation | Download |
+|-----------|----------|
+| PSD2 Directive | [EUR-Lex 2015/2366](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32015L2366) |
+| PSD2 RTS on SCA | [EUR-Lex 2018/389](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32018R0389) |
+| SEPA Regulation | [EUR-Lex 260/2012](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32012R0260) |
+| MiCA | [EUR-Lex 2023/1114](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32023R1114) |
+| DORA | [EUR-Lex 2022/2554](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32022R2554) |
+| EMD2 | [EUR-Lex 2009/110/EC](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32009L0110) |
+| AMLD5 | [EUR-Lex 2018/843](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32018L0843) |
+| AMLD6 | [EUR-Lex 2018/1673](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32018L1673) |
+| GDPR | [EUR-Lex 2016/679](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32016R0679) |
+| IFR | [EUR-Lex 2015/751](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32015R0751) |
+
+> The PSD2 Quick Guide is a third-party overview by Latham & Watkins, not an official EU document.
+
 ## Prerequisites
 
 | Tool | Version | Check |
