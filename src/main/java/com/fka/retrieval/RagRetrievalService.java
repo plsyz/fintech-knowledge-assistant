@@ -23,8 +23,8 @@ public class RagRetrievalService {
                 .defaultSystem(systemPromptResource)
                 .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore)
                         .searchRequest(SearchRequest.builder()
-                                .topK(10)             // Return 10 most similar chunks
-                                .similarityThreshold(0.2) // Only chunks with >= 0.2 cosine similarity
+                                .topK(15)             // Return 15 most similar chunks
+                                .similarityThreshold(0.0) // No threshold — return top-K regardless, let LLM judge relevance
                                 .build())
                         .build())
                 .build();

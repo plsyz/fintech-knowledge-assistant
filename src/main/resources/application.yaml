@@ -24,6 +24,15 @@ spring:
         dimensions: 768
         initialize-schema: true
 
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: fka_password
+  data:
+    neo4j:
+      database: neo4j
+
   datasource:
     url: jdbc:postgresql://localhost:5433/fka_vectorstore
     username: fka_user
@@ -38,3 +47,7 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+
+server:
+  error:
+    include-message: always
