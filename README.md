@@ -4,6 +4,10 @@ A production-aware **GraphRAG** system that answers EU payment and financial reg
 
 Built with **Spring Boot + Spring AI + Neo4j + PGVector**. Supports both **local Ollama models** and **Anthropic Claude API** for chat.
 
+<p align="center">
+  <img src="docs/images/knowledge-graph.png" alt="Knowledge Graph — 17 nodes, 24 relationships across Providers, Regulations, Compliance Requirements, and Payment Methods" width="850">
+</p>
+
 ## What It Does
 
 ### Phase 1: Document RAG
