@@ -1,8 +1,8 @@
 # FinTech Knowledge Assistant
 
-A production-aware **GraphRAG** system that answers EU payment and financial regulation questions by combining a **Neo4j knowledge graph** with **vector-based document retrieval**.
+A production-aware **Agentic GraphRAG** system that answers EU payment and financial regulation questions using **autonomous tool calling**, **chain workflows**, **routing workflows**, and an **MCP server** — built on top of a **Neo4j knowledge graph** and **vector-based document retrieval**.
 
-Built with **Spring Boot + Spring AI + Neo4j + PGVector**. Supports both **local Ollama models** and **Anthropic Claude API** for chat.
+Built with **Spring Boot + Spring AI + Neo4j + PGVector + MCP**. Uses **Anthropic Claude API** for chat and **local Ollama** for embeddings.
 
 <p align="center">
   <img src="docs/images/knowledge-graph.png" alt="Knowledge Graph — 17 nodes, 24 relationships across Providers, Regulations, Compliance Requirements, and Payment Methods" width="850">
@@ -28,31 +28,48 @@ A Neo4j knowledge graph models the FinTech regulatory landscape:
 
 The **GraphRAG endpoint** fuses both sources — it extracts entities from a question, queries the knowledge graph for structured context, retrieves relevant document chunks from PGVector, then sends both to the LLM for a comprehensive answer.
 
+### Phase 3: Agentic Systems (Tool Calling + MCP + Workflows)
+The agent layer sits on top of Phases 1 and 2, making the system **active** instead of passive:
+- **5 @Tool methods** that the LLM can autonomously decide to call (wrapping Phase 1 RAG and Phase 2 Graph services)
+- **MCP Server** exposing all tools via the Model Context Protocol — any MCP client (Claude Desktop, IDEs, other agents) can discover and call them
+- **Chain Workflow** — 4-step compliance pipeline: classify transaction → find regulations → check requirements → generate report
+- **Routing Workflow** — classifies questions into 6 domain categories (SCA, TPP, AML, Licensing, Consumer Rights, General) and routes to specialized expert prompts
+- **Deterministic + LLM hybrid** — business rules in code (SCA exemption < 30 EUR) combined with LLM for regulation interpretation
+
 ## Architecture
 
 ```
-+------------------------------------------------------------------+
-|                    Spring Boot Application                        |
-|                                                                    |
-|  +----------------+  +------------------+  +-------------------+  |
-|  | Ingestion      |  | RAG Query        |  | Graph Query       |  |
-|  | Controller     |  | Controller       |  | Controller        |  |
-|  | POST /ingest   |  | GET /rag/ask     |  | GET /graph/...    |  |
-|  +-------+--------+  +--------+---------+  +--------+----------+  |
-|          |                     |                     |             |
-|          v                     v                     v             |
-|  +----------------+  +------------------+  +-------------------+  |
-|  | Document       |  | RAG Retrieval    |  | Knowledge Graph   |  |
-|  | Ingestion      |  | Service          |  | Service           |  |
-|  | Service        |  +--------+---------+  +--------+----------+  |
-|  +-------+--------+           |                     |             |
-|          |                     |                     |             |
-|          |            +--------+---------+           |             |
-|          |            | GraphRAG Service |<----------+             |
-|          |            | GET /graph-rag   |                         |
-|          |            | (Fusion Layer)   |                         |
-|          |            +--------+---------+                         |
-+----------|---------------------|---------------------------------+
++-----------------------------------------------------------------------+
+|                       Spring Boot Application                         |
+|                                                                       |
+|  +--------------------------------------------------------------+    |
+|  |                   AGENT LAYER (Phase 3)                       |    |
+|  |                                                               |    |
+|  |  +---------------------+  +-----------------------------+    |    |
+|  |  | ComplianceCheck     |  | RegulationRouter            |    |    |
+|  |  | Workflow (CHAIN)    |  | Workflow (ROUTING)          |    |    |
+|  |  | 4-step pipeline     |  | classify -> domain expert   |    |    |
+|  |  +---------------------+  +-----------------------------+    |    |
+|  |                                                               |    |
+|  |  +----------------------------------------------------------+|    |
+|  |  | MCP SERVER (Tool Registry)          /sse + /mcp/messages ||    |
+|  |  | @Tool getComplianceRequirements   @Tool checkScaRequirement|    |
+|  |  | @Tool findApplicableRegulations   @Tool getProviderGraph  ||    |
+|  |  | @Tool getProcessingTimeline                               ||    |
+|  |  +----------------------------------------------------------+|    |
+|  +--------------------------------------------------------------+    |
+|          |                     |                     |                |
+|          v                     v                     v                |
+|  +----------------+  +------------------+  +-------------------+     |
+|  | Ingestion      |  | RAG Retrieval    |  | Knowledge Graph   |     |
+|  | Service        |  | Service          |  | Service           |     |
+|  +-------+--------+  +--------+---------+  +--------+----------+     |
+|          |                     |                     |                |
+|          |            +--------+---------+           |                |
+|          |            | GraphRAG Service |<----------+                |
+|          |            | (Fusion Layer)   |                            |
+|          |            +--------+---------+                            |
++----------|---------------------|-------------------------------------+
            |                     |
            v                     v
   +------------------+  +------------------+  +------------------+
@@ -78,6 +95,8 @@ The **GraphRAG endpoint** fuses both sources — it extracts entities from a que
 | Vector Store | PostgreSQL + PGVector | Vector similarity search + metadata filtering |
 | Knowledge Graph | Neo4j 5 Community Edition | Structured entity/relationship storage |
 | Graph ORM | Spring Data Neo4j | Entity mapping and repository queries |
+| MCP Server | Spring AI MCP Server WebMVC | Tool discovery and invocation via Model Context Protocol |
+| Tool Calling | Spring AI @Tool + MethodToolCallbackProvider | LLM-callable Java methods with auto-discovery |
 | Index Type | HNSW | Fast approximate nearest neighbor search |
 
 ## Regulations Ingested
@@ -201,7 +220,7 @@ On startup, the application automatically seeds the Neo4j knowledge graph with p
 ### 4. Ingest a PDF
 
 ```bash
-curl -X POST http://localhost:8080/api/ingest/pdf \
+curl -X POST http://localhost:8081/api/ingest/pdf \
   -F "file=@docs/regulations/your-document.pdf" \
   -F "regulation=REGULATION_NAME"
 ```
@@ -210,32 +229,43 @@ curl -X POST http://localhost:8080/api/ingest/pdf \
 
 ```bash
 # Phase 1: Document RAG — search all documents
-curl "http://localhost:8080/api/rag/ask?question=What%20is%20PSD2?"
+curl "http://localhost:8081/api/rag/ask?question=What%20is%20PSD2?"
 
 # Phase 1: Document RAG — search specific regulation only
-curl "http://localhost:8080/api/rag/ask/filtered?question=What%20is%20SCA?&regulation=PSD2"
+curl "http://localhost:8081/api/rag/ask/filtered?question=What%20is%20SCA?&regulation=PSD2"
 
 # Phase 2: GraphRAG — combines knowledge graph + document context
-curl "http://localhost:8080/api/graph-rag/ask?question=What%20regulations%20does%20Riverty%20comply%20with?"
+curl "http://localhost:8081/api/graph-rag/ask?question=What%20regulations%20does%20Riverty%20comply%20with?"
+
+# Phase 3: Routed Expert — classifies question and routes to domain expert
+curl "http://localhost:8081/api/agent/ask?question=Does%20a%2025%20euro%20card%20payment%20need%20SCA?"
+
+# Phase 3: Compliance Check — 4-step chain workflow producing a full report
+curl -X POST http://localhost:8081/api/agent/compliance-check \
+  -H "Content-Type: text/plain" \
+  -d "BNPL transaction of 500 EUR from Germany to France"
+
+# Phase 3: GraphRAG via Agent layer
+curl "http://localhost:8081/api/agent/ask/graph-rag?question=What%20payment%20methods%20does%20Riverty%20support?"
 ```
 
 ### 6. Browse the Knowledge Graph
 
 ```bash
 # List all payment providers with their regulations and payment methods
-curl "http://localhost:8080/api/graph/providers"
+curl "http://localhost:8081/api/graph/providers"
 
 # Get a specific provider
-curl "http://localhost:8080/api/graph/providers/Riverty"
+curl "http://localhost:8081/api/graph/providers/Riverty"
 
 # Get compliance requirements for a provider
-curl "http://localhost:8080/api/graph/providers/Riverty/compliance"
+curl "http://localhost:8081/api/graph/providers/Riverty/compliance"
 
 # Get all providers regulated by a specific regulation
-curl "http://localhost:8080/api/graph/regulations/PSD2/providers"
+curl "http://localhost:8081/api/graph/regulations/PSD2/providers"
 
 # Get the regulation supersedes chain (e.g., PSD2 -> PSD1)
-curl "http://localhost:8080/api/graph/regulations/PSD2/chain"
+curl "http://localhost:8081/api/graph/regulations/PSD2/chain"
 ```
 
 You can also browse Neo4j visually at [http://localhost:7474](http://localhost:7474) (login: neo4j / fka_password).
@@ -266,6 +296,19 @@ You can also browse Neo4j visually at [http://localhost:7474](http://localhost:7
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/graph-rag/ask?question=X` | Ask using both knowledge graph + document context |
+
+### Phase 3: Agent (Agentic Workflows)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/agent/compliance-check` | Run 4-step chain workflow: classify → regulations → requirements → report |
+| GET | `/api/agent/ask?question=X` | Smart routing: classify question → route to domain expert |
+| GET | `/api/agent/ask/graph-rag?question=X` | GraphRAG fusion via the agent layer |
+
+### Phase 3: MCP Server
+| Protocol | Endpoint | Description |
+|----------|----------|-------------|
+| SSE | `/sse` | MCP SSE connection endpoint (tool discovery) |
+| JSON-RPC | `/mcp/messages?sessionId=X` | MCP message endpoint (tool invocation) |
 
 ## Knowledge Graph Schema
 
@@ -310,24 +353,34 @@ fintech-knowledge-assistant/
 │   ├── retrieval/
 │   │   ├── RagRetrievalService.java            # Question -> answer (RAG)
 │   │   └── RagQueryController.java             # GET /api/rag
-│   └── graph/
+│   ├── graph/
+│   │   ├── config/
+│   │   │   └── Neo4jConfig.java                # Neo4j transaction manager
+│   │   ├── model/
+│   │   │   ├── PaymentProvider.java            # @Node entity
+│   │   │   ├── Regulation.java                 # @Node entity
+│   │   │   ├── ComplianceRequirement.java      # @Node entity
+│   │   │   └── PaymentMethod.java              # @Node entity
+│   │   ├── repository/
+│   │   │   ├── PaymentProviderRepository.java  # Neo4j CRUD + custom queries
+│   │   │   └── RegulationRepository.java       # Neo4j CRUD + custom queries
+│   │   ├── service/
+│   │   │   ├── GraphDataLoader.java            # Seeds Neo4j on first startup
+│   │   │   ├── KnowledgeGraphService.java      # Graph traversal + formatting
+│   │   │   └── GraphRAGService.java            # Fusion: graph + vector + LLM
+│   │   └── controller/
+│   │       ├── GraphQueryController.java       # GET /api/graph/*
+│   │       └── GraphRAGController.java         # GET /api/graph-rag/ask
+│   └── agent/                                  # Phase 3: Agentic Systems
+│       ├── tools/
+│       │   └── PaymentToolsService.java        # 5 @Tool methods for LLM
+│       ├── workflow/
+│       │   ├── ComplianceCheckWorkflow.java    # Chain pattern (4-step)
+│       │   └── RegulationRouterWorkflow.java   # Routing pattern (6 categories)
 │       ├── config/
-│       │   └── Neo4jConfig.java                # Neo4j transaction manager
-│       ├── model/
-│       │   ├── PaymentProvider.java            # @Node entity
-│       │   ├── Regulation.java                 # @Node entity
-│       │   ├── ComplianceRequirement.java      # @Node entity
-│       │   └── PaymentMethod.java              # @Node entity
-│       ├── repository/
-│       │   ├── PaymentProviderRepository.java  # Neo4j CRUD + custom queries
-│       │   └── RegulationRepository.java       # Neo4j CRUD + custom queries
-│       ├── service/
-│       │   ├── GraphDataLoader.java            # Seeds Neo4j on first startup
-│       │   ├── KnowledgeGraphService.java      # Graph traversal + formatting
-│       │   └── GraphRAGService.java            # Fusion: graph + vector + LLM
+│       │   └── McpServerConfig.java            # MCP tool registration
 │       └── controller/
-│           ├── GraphQueryController.java       # GET /api/graph/*
-│           └── GraphRAGController.java         # GET /api/graph-rag/ask
+│           └── AgentController.java            # REST endpoints for agent
 ├── src/main/resources/
 │   ├── application.yaml                        # All configuration
 │   └── prompts/
@@ -352,6 +405,12 @@ fintech-knowledge-assistant/
 | Top-K (GraphRAG) | 5 | Graph context already provides structured facts, fewer chunks needed |
 | Temperature | 0.3 | Factual and deterministic for regulatory Q&A |
 | Similarity Threshold | 0.0-0.2 | Permissive — lets the LLM judge relevance from more candidates |
+| Agentic Patterns | Chain + Routing | Most common production patterns; Chain for fixed sequences, Routing for diverse question types |
+| Tool Framework | Spring AI @Tool | Native annotation, auto-discovery, clean method-level tooling |
+| MCP Transport | SSE (Server-Sent Events) | Works over HTTP, compatible with web clients, Spring MVC friendly |
+| Chain Steps | 4 (classify → regulate → check → report) | Balance between granularity and latency |
+| Router Categories | 6 domain categories | Covers PSD2 + AMLD5 domains without overwhelming the classifier |
+| SCA Tool Design | Deterministic rules + RAG | Business rules for certain logic (< 30 EUR), LLM for interpretation |
 
 ## License
 

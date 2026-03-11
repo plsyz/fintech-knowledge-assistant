@@ -17,6 +17,12 @@ spring:
       embedding:
         options:
           model: nomic-embed-text
+    mcp:
+      server:
+        name: fintech-knowledge-server
+        version: 1.0.0
+        type: SYNC
+        sse-message-endpoint: /mcp/messages
     vectorstore:
       pgvector:
         index-type: HNSW
@@ -49,5 +55,6 @@ spring:
       max-request-size: 50MB
 
 server:
+  port: 8081
   error:
     include-message: always
