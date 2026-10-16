@@ -1,5 +1,7 @@
 # FinTech Knowledge Assistant
 
+> **Evaluation harness and results:** see branch [`eval/grounding-contamination`](https://github.com/plsyz/fintech-knowledge-assistant/tree/eval/grounding-contamination) — 125-question gold set with article-level ground truth, vector RAG vs GraphRAG vs closed-book baseline, LLM-judge scoring, and the full results (`eval/results/analysis/summary.md`).
+
 A production-aware **Agentic GraphRAG** system that answers EU payment and financial regulation questions using **autonomous tool calling**, **chain workflows**, **routing workflows**, and an **MCP server** — built on top of a **Neo4j knowledge graph** and **vector-based document retrieval**.
 
 Built with **Spring Boot + Spring AI + Neo4j + PGVector + MCP**. Uses **Anthropic Claude API** for chat and **local Ollama** for embeddings.
@@ -335,7 +337,7 @@ You can also browse Neo4j visually at [http://localhost:7474](http://localhost:7
 4. **Context Fusion** — Both structured (graph) and unstructured (documents) contexts are combined into a single prompt
 5. **LLM Answer** — The LLM synthesizes a comprehensive answer using both sources
 
-This gives significantly richer answers than document RAG alone — the graph provides factual relationships while documents provide legal detail and exact wording.
+This is designed to give richer answers than document RAG alone — the graph provides factual relationships while documents provide legal detail and exact wording. *Note:* the evaluation on the `eval/grounding-contamination` branch found that, on article-level regulatory questions, GraphRAG scored below plain vector RAG (66.7% vs 76.2%), because the graph covers few of those questions and the narrower top-5 retrieval window loses the relevant passage more often; GraphRAG helps on provider/relationship questions, which the gold set does not target.
 
 ## Project Structure
 
