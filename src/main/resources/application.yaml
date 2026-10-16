@@ -54,6 +54,11 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
 
+fka:
+  eval:
+    # Exposes /api/eval/** (vector / graph-rag / no-retrieval answering with sources). Dev/eval only.
+    enabled: ${FKA_EVAL_ENABLED:false}
+
 server:
   port: 8081
   error:

@@ -42,6 +42,11 @@ public class GraphRAGService {
     }
 
     public String answerWithGraphContext(String question) {
+        return answerWithGraphContextDetailed(question).answer();
+    }
+
+    /** GraphRAG answer together with the graph and document contexts that were injected. */
+    public GraphRAGResult answerWithGraphContextDetailed(String question) {
         // Step 1: Extract entities from the question using LLM
         String extractedEntities = extractEntities(question);
         log.info("Extracted entities: {}", extractedEntities);
@@ -58,11 +63,24 @@ public class GraphRAGService {
         String combinedPrompt = buildCombinedPrompt(question, graphContext, documentContext);
 
         // Step 5: Call LLM with combined context
-        return chatClient.prompt()
+        String answer = chatClient.prompt()
                 .user(combinedPrompt)
                 .call()
                 .content();
+
+        return new GraphRAGResult(answer, extractedEntities, graphContext, lastRetrievedDocuments(question));
     }
+
+    private List<com.fka.retrieval.RagRetrievalService.RetrievedChunk> lastRetrievedDocuments(String question) {
+        // Re-runs the same deterministic similarity search used in buildDocumentContext so the
+        // eval harness can see which chunks (regulation, page, score) backed the answer.
+        List<Document> documents = vectorStore.similaritySearch(
+                SearchRequest.builder().query(question).topK(5).similarityThreshold(0.0).build());
+        return com.fka.retrieval.RagRetrievalService.toSources(documents);
+    }
+
+    public record GraphRAGResult(String answer, String extractedEntities, String graphContext,
+                                 List<com.fka.retrieval.RagRetrievalService.RetrievedChunk> sources) {}
 
     private String extractEntities(String question) {
         return chatClient.prompt()

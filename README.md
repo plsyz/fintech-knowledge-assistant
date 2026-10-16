@@ -135,6 +135,15 @@ All regulations are freely available from the official EU law portal. Download t
 
 > The PSD2 Quick Guide is a third-party overview by Latham & Watkins, not an official EU document.
 
+## Evaluation
+
+`eval/` contains a 125-question gold set with article-level ground truth (105 answerable, 20
+unanswerable) and a harness that compares vector RAG, GraphRAG and a closed-book baseline on
+accuracy, citation correctness, unsupported claims and abstention. The closed-book baseline is a
+contamination check: questions the base model answers without any context do not measure
+retrieval. See [`eval/README.md`](eval/README.md) and [`EVAL-RUNBOOK.md`](EVAL-RUNBOOK.md).
+The `/api/eval/**` endpoints are enabled with `FKA_EVAL_ENABLED=true` and are not for production.
+
 ## Prerequisites
 
 | Tool | Version | Check |

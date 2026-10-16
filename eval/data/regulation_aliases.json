@@ -1,0 +1,61 @@
+{
+  "PSD2": [
+    "PSD2",
+    "PSD 2",
+    "2015/2366",
+    "Payment Services Directive"
+  ],
+  "SCA-RTS": [
+    "RTS",
+    "2018/389",
+    "regulatory technical standards",
+    "Delegated Regulation"
+  ],
+  "SEPA": [
+    "SEPA",
+    "260/2012"
+  ],
+  "MICA": [
+    "MiCA",
+    "MICA",
+    "2023/1114",
+    "Markets in Crypto-Assets"
+  ],
+  "DORA": [
+    "DORA",
+    "2022/2554",
+    "Digital Operational Resilience"
+  ],
+  "EMD2": [
+    "EMD2",
+    "EMD 2",
+    "2009/110",
+    "E-Money Directive",
+    "Electronic Money Directive"
+  ],
+  "AMLD5": [
+    "AMLD5",
+    "AMLD 5",
+    "2018/843",
+    "5th Anti-Money Laundering",
+    "Fifth Anti-Money Laundering",
+    "2015/849"
+  ],
+  "AMLD6": [
+    "AMLD6",
+    "AMLD 6",
+    "2018/1673",
+    "6th Anti-Money Laundering",
+    "Sixth Anti-Money Laundering"
+  ],
+  "GDPR": [
+    "GDPR",
+    "2016/679",
+    "General Data Protection"
+  ],
+  "IFR": [
+    "IFR",
+    "2015/751",
+    "Interchange Fee Regulation"
+  ]
+}
